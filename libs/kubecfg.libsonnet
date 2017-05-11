@@ -1,25 +1,7 @@
 local core = import "core.libsonnet";
 local kubeUtil = import "util.libsonnet";
-local kpm = import "kpm.libsonnet";
+local utils = import "kubecfg-std.libsonnet";
 
-local utils = {
-    resource: {
-      getName(obj)::
-        obj['metadata']['name'],
-      getLabels(obj)::
-        obj['metadata']['labels'],
-      setNamespace(namespace)::
-       { metadata+: {namespace: namespace } },
-      setName(name)::
-       { metadata+: {name: name} },
-    },
-
-    expanders: {
-        jinja2:: kpm.jinja2,
-        jsonnet:: kpm.jsonnet,
-    },
-
-} + kpm;
 
 local portUtils = {
     portName(port):: "port-%s" % port,
@@ -107,7 +89,7 @@ local render_utils = {
 };
 
 local render(app, params) = (
-    if std.objectHas(params.variables, 'action') && params.variables.action == "generate" then
+    if std.objectHas(params, 'action') && params.action == "generate" then
       render_utils.createList(app, params)
     else
       app

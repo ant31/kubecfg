@@ -1,4 +1,14 @@
-local reference_api = {
+local common_api = (import "k8s/api/common.libsonnet");
+
+local base_api(partial_api) = {
+    [ext]: {[version]: {[name]: partial_api[ext][version][name]
+                                + common_api(name, ext, version)
+                                for name in std.objectFields(partial_api[ext][version])}}
+    for ext in std.objectFields(partial_api)
+    for version in std.objectFields(partial_api[ext])};
+
+
+local reference_api = base_api({
   core: {
       v1: {
           Binding: import "api/core/v1/binding.libsonnet",
@@ -40,7 +50,7 @@ local reference_api = {
     },
 
 
-};
+});
 
 local flat =
     reference_api.core.v1 +
@@ -83,6 +93,17 @@ local groups = {
 
     },
 };
-{
-    reference: reference_api,
-} + groups  + flat
+
+
+// local f = flat.ConfigMap.new("foobar") +
+// flat.ConfigMap.Metadata.addLabel("toto", "titi");
+local f2 = flat.ConfigMap;
+local f3 = f2.Create("too") + f2.MergeData({foo: "bar"});
+f3 + f3.data
+
+
+// {
+//     reference: reference_api,
+//     test: flat.Deployment.new("foobar")
+// } + groups  + flat
+

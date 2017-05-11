@@ -1,46 +1,60 @@
-local utils = import "../../utils/utils.libsonnet";
+local utils = import "utils/utils.libsonnet";
+local k8sutils = import "k8s/k8s-utils.libsonnet";
+local base = k8sutils.base;
 
-local common = {
-    _new(kind, api)::
-        self.kind(kind) +
-        self.metadata(),
-    kind(kind):: utils.asserts.type(kind, "string", "kind") {kind: kind},
-    metadata(name=null, namespace=null, annotations=null, labels=null)::
-        {metadata+: {name: name, namespace: namespace, annotations: annotations, labels: labels},
+function(kind, ext="core", version="v1")
+
+local meta = {
+    local realSelf = self,
+    Load(obj):: obj + realSelf,
+    New(name, namespace=null)::
+        realSelf +
+        realSelf.Metadata.Name(name) +
+        realSelf.Metadata.Namespace(namespace),
+
+   Metadata:: {
+      Init()::
+        {metadata: {annotations: {}, labels: {}}},
+
+      Create(name=null, namespace=null, annotations={}, labels={}):: (
+        self.Init() +
+        (if name != null then self.Name(name) else {}) +
+          self.MergeAnnotations(annotations) +
+          self.MergeLabels(labels)
+      ),
+
+      Name(name)::
+        local check = base.verify(self.uuid) && utils.asserts.type(name, "string", "name");
+        {metadata+: {name: name}},
+
+      AddLabel(key, value)::
+        base.verify(self.uuid) +
+        {metadata+: {labels+: {[key]: value}}},
+
+      MergeLabels(labels)::
+        base.verify(self.uuid) +
+        {metadata+: {labels+: labels}},
+
+      Namespace(namespace=null):: (
+        local ns =
+           if namespace == null then {}
+           else
+             base.verify(self.uuid) +
+             utils.asserts.type(namespace, "string", "namespace") +
+             {metadata+: {namespace: namespace}};
+        ns),
+      AddAnnotation(key, value)::
+        base.verify(self.uuid) +
+        {metadata+: {annotations+: {[key]: value}}},
+
+      MergeAnnotations(annotations)::
+        base.verify(self.uuid) +
+        {metadata+: {annotations+: annotations}},
     },
+};
 
-    //
-    // Namespace.
-    //
+{
+ kind: if utils.asserts.type(kind, "string", "kind") then kind,
+ apiVersion: if ext == "core" then version else "%s/%s" % [ext, version]
+} + meta + meta.Metadata.Create()
 
-    // namespace:: {
-    //   Default(name)::
-    //     bases.Namespace +
-    //     kubeAssert.Type("name", name, "string") +
-    //     $.v1.ApiVersion +
-    //     common.Kind("Namespace") +
-    //     common.Metadata($.v1.metadata.Name(name)),
-    // },
-    // TODO: This sets the metadata property, rather than doing a
-    // mixin. Is this what we want?
-//     Metadata(metadata={}):: {metadata: $.v1.metadata.Default() + metadata},
-
-//     mixin:: {
-//       Metadata(mixin):: {metadata+: mixin},
-
-//       metadata:: {
-//         local metadata = $.v1.metadata,
-//         local mixin = common.mixin,
-
-//         Name:: meta.MixinPartial1(metadata.Name, mixin.Metadata),
-//         Label:: meta.MixinPartial2(metadata.Label, mixin.Metadata),
-//         Labels:: meta.MixinPartial1(metadata.Labels, mixin.Metadata),
-//         Namespace:: meta.MixinPartial1(metadata.Namespace, mixin.Metadata),
-//         Annotation:: meta.MixinPartial2(metadata.Annotation, mixin.Metadata),
-//         Annotations::
-//           meta.MixinPartial1(metadata.Annotations, mixin.Metadata),
-//       },
-//     },
-   };
-
-common._new("deployment", "apps/v1beta1")

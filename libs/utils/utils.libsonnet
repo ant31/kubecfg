@@ -5,11 +5,18 @@ local assertutils = import "utils/assert-utils.libsonnet";
       [x for x in std.range(1, i)]
    ),
 
-  objectFlatten(obj):: {
+  objectFieldsHidden(obj):: (
+     std.setDiff(std.objectFieldsAll(obj), std.objectFields(obj))
+  ),
+
+  objectFlatten(obj):: (
     // Merge 1 level dict depth into toplevel
-    [k]: obj[j][k], for j in std.objectFields(obj)
-                  for k in std.objectFields(obj[j])
-  },
+    local visible = {[k]: obj[j][k],
+                    for j in std.objectFieldsAll(obj)
+                    for k in std.objectFieldsAll(obj[j])};
+
+    visible
+  ),
 
    compact(array):: (
      [x for x in array if x != null]
@@ -24,6 +31,13 @@ local assertutils = import "utils/assert-utils.libsonnet";
     local fields = std.objectFields(obj);
     {[key]: func(obj[key]) for key in fields}
     ),
+
+   capitalize(str):: (
+     std.char(std.codepoint(str[0]) - 32) + str[1:]
+   ),
+  test: self.capitalize("test"),
+
+
 
   asserts: assertutils
 }
