@@ -17,7 +17,7 @@ kubecfg.render({
     // resources to deploy
     resources: {
       "logstash-svc.json": kubecfg.k8s.service.Create(name="logstash", ports=[5040]),
-      // "logstash-configmap.json": (import "templates/logstash-configmap.jsonnet")(application.variables),
+       "logstash-configmap.json": (import "templates/logstash-configmap.jsonnet")(application.variables),
     }
 
 }, params)

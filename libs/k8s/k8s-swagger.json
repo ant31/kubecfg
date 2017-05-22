@@ -38088,7 +38088,7 @@
      "Port"
     ],
     "properties": {
-     "Port": {
+     "port": {
       "description": "Port number of the given endpoint.",
       "type": "integer",
       "format": "int32"

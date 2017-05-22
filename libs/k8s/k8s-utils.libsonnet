@@ -3,6 +3,12 @@ local utils = import "utils/utils.libsonnet";
 {
  local kutils = self,
 
+ Array:: {
+  append(value):: (
+    
+  )
+ },
+
  GenerateMethods(fields, path, partial=false):: (
    utils.objectFlatten({[key]: kutils.GenerateFieldMethods(key, fields[key], path, partial),
                                           for key in std.objectFields(fields)})
@@ -10,19 +16,20 @@ local utils = import "utils/utils.libsonnet";
 
  GenerateFieldMethods(name, obj, path, default_partial=false):: (
        local capName = utils.capitalize(name);
+
            { [capName]:: function(value, partial=default_partial) (
-               //assert utils.asserts.type(value, obj.type, name);
+               assert utils.asserts.type(value, obj.type, name);
                kutils.mixin({[name]: value}, path, partial)
            ) } +
 
       if obj.type == "array"  || obj.type == "object" then
         {
            [capName]:: function(value, partial=default_partial) (
-      //         assert utils.asserts.type(value, obj.type, name);
+               assert utils.asserts.type(value, obj.type, name);
                kutils.mixin({[name]: value}, path, partial)
            ),
            ["merge%s" % capName]:: function(value, partial=default_partial) (
-        //       assert utils.asserts.type(value, obj.type, name);
+             assert utils.asserts.type(value, obj.type, name);
                kutils.mixin({[name]+: value}, path, partial)
            ),
         } else {} +
